@@ -1,0 +1,144 @@
+# snake_game.py
+import pygame
+import random
+import sys
+import time
+
+# Initialize pygame
+pygame.init()
+
+# Set up display
+width, height = 600, 350
+window = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Snake Game")
+
+# Colors
+black = pygame.Color(0, 0, 0)
+green = pygame.Color(0, 255, 0)
+red = pygame.Color(255, 0, 0)
+white = pygame.Color(255, 255, 255)
+
+# Set game clock
+clock = pygame.time.Clock()
+snake_speed = 10
+
+# Snake settings
+snake_size = 10
+snake_pos = [100, 50]
+snake_body = [[100, 50], [90, 50], [80, 50]]
+
+# Food settings
+food_pos = [random.randrange(1, (width // snake_size)) * snake_size,
+            random.randrange(1, (height // snake_size)) * snake_size]
+food_spawn = True
+
+# Movement
+direction = 'RIGHT'
+change_to = direction
+
+# Score
+score = 0
+
+# Game over function
+def game_over():
+    font = pygame.font.SysFont('times new roman', 50)
+    game_over_surface = font.render(f'Your Score is {score}', True, red)
+    game_over_rect = game_over_surface.get_rect()
+    game_over_rect.midtop = (width / 2, height / 4)
+    window.fill(black)
+    window.blit(game_over_surface, game_over_rect)
+    pygame.display.flip()
+    time.sleep(4)
+    pygame.quit()
+    sys.exit()
+
+# Welcome screen function
+def welcome_screen():
+    font = pygame.font.SysFont('times new roman', 50)
+    play_button_font = pygame.font.SysFont('times new roman', 30)
+    
+    while True:
+        window.fill(black)
+        title_surface = font.render('Welcome to Snake', True, white)
+        title_rect = title_surface.get_rect()
+        title_rect.center = (width // 2, height // 4)
+        
+        play_button_surface = play_button_font.render('Play', True, black)
+        play_button_rect = pygame.Rect(width // 2 - 50, height // 2, 100, 50)
+        
+        pygame.draw.rect(window, white, play_button_rect)
+        window.blit(play_button_surface, (play_button_rect.x + 25, play_button_rect.y + 10))
+        
+        window.blit(title_surface, title_rect)
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if play_button_rect.collidepoint(event.pos):
+                    return  # Exit the welcome screen to start the game
+
+# Main game loop
+def game_loop():
+    global snake_pos, snake_body, food_pos, food_spawn, direction, change_to, score
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and direction != 'DOWN':
+                    change_to = 'UP'
+                elif event.key == pygame.K_DOWN and direction != 'UP':
+                    change_to = 'DOWN'
+                elif event.key == pygame.K_LEFT and direction != 'RIGHT':
+                    change_to = 'LEFT'
+                elif event.key == pygame.K_RIGHT and direction != 'LEFT':
+                    change_to = 'RIGHT'
+
+        direction = change_to
+
+        if direction == 'UP':
+            snake_pos[1] -= snake_size
+        if direction == 'DOWN':
+            snake_pos[1] += snake_size
+        if direction == 'LEFT':
+            snake_pos[0] -= snake_size
+        if direction == 'RIGHT':
+            snake_pos[0] += snake_size
+
+        snake_body.insert(0, list(snake_pos))
+        if snake_pos == food_pos:
+            score += 1
+            food_spawn = False
+        else:
+            snake_body.pop()
+
+        if not food_spawn:
+            food_pos = [random.randrange(1, (width // snake_size)) * snake_size,
+                        random.randrange(1, (height // snake_size)) * snake_size]
+        food_spawn = True
+
+        window.fill(black)
+
+        for pos in snake_body:
+            pygame.draw.rect(window, green, pygame.Rect(pos[0], pos[1], snake_size, snake_size))
+
+        pygame.draw.rect(window, red, pygame.Rect(food_pos[0], food_pos[1], snake_size, snake_size))
+
+        if snake_pos[0] < 0 or snake_pos[0] >= width or snake_pos[1] < 0 or snake_pos[1] >= height:
+            game_over()
+        for block in snake_body[1:]:
+            if snake_pos == block:
+                game_over()
+
+        pygame.display.update()
+        clock.tick(snake_speed)
+
+# Entry point of the game
+if __name__ == "__main__":
+    welcome_screen()  # Display the welcome screen
+    game_loop()       # Start the main game loop
